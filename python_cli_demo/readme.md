@@ -11,7 +11,7 @@ pip install -r requirements.txt
 运行
 
 ```
-python tts.py --input ./examples/demo.txt
+python pkg/tts.py --input ./examples/demo.txt
 ```
 
 > 使用`python` 运行`tts.py`，通过参数`input`传入文本文件的路径
@@ -19,7 +19,7 @@ python tts.py --input ./examples/demo.txt
 > 或者可以通过传入`output` 传入希望保存的文件名
 
 ```
-python tts.py --input ./examples/demo.txt --config ./examples/config.yml --output demo.mp3
+python pkg/tts.py --input ./examples/demo.txt --config ./examples/config.yml --output demo.mp3
 ```
 
 带有自定义标签的文本文件的示例如下
@@ -34,7 +34,7 @@ python tts.py --input ./examples/demo.txt --config ./examples/config.yml --outpu
 【男1:,Boy】这里还是男1，不过我现在的角色是男孩。
 【男1:,Girl】这里还是男1，我现在的角色是女孩<break strength="strong" />不过，我不会扮演这个角色啊，还是回到了我原来的声音。
 【女1:,Boy】这里还是女1，我现在的角色也是男孩。
-【女1】标签每行只有一个生效，【男1】这个是不起作用的。
+【女1】标签必须在每行的开始位置，并且每行只有一个生效，【男1】这个是不起作用的。
 ```
 `【男1】` 标签，在config.yml中配置的一个tag 
 

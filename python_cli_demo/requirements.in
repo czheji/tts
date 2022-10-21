@@ -1,6 +1,0 @@
-# requirements.in
-requests
-websockets
-pyyaml
-mako
-pydub

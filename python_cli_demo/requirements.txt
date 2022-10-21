@@ -11,16 +11,16 @@ charset-normalizer==2.1.1
 idna==3.4
     # via requests
 mako==1.2.3
-    # via -r requirements.in
+    # via ttsDemo (setup.py)
 markupsafe==2.1.1
     # via mako
 pydub==0.25.1
-    # via -r requirements.in
+    # via ttsDemo (setup.py)
 pyyaml==6.0
-    # via -r requirements.in
+    # via ttsDemo (setup.py)
 requests==2.28.1
-    # via -r requirements.in
+    # via ttsDemo (setup.py)
 urllib3==1.26.12
     # via requests
-websockets==10.2
-    # via -r requirements.in
+websockets==10.3
+    # via ttsDemo (setup.py)

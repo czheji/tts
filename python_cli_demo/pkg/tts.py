@@ -345,8 +345,7 @@ def run(lines, cfg, output_path):
         os.remove(seg.filename)
     print(f'5. remove temp files done, completed')
 
-
-if __name__ == "__main__":
+def cmd():
     args = parseArgs()
     output_path = args.output if args.output else 'output_'+ str(int(time.time()*1000))+".mp3"
     config_path = args.config if args.config else 'config.yml'
@@ -358,6 +357,9 @@ if __name__ == "__main__":
     print(f'1. read txt done, lines={len(lines)}')
     # 3 进行转换
     run(lines, cfg, output_path)
+
+if __name__ == "__main__":
+    cmd()
  
 
     # python tts.py --input SSML.xml
