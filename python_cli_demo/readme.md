@@ -1,11 +1,7 @@
 # 微软tts python版demo(cli)
 
-
+来自： https://github.com/skygongque/tts
 ## 使用方法
-
-使用方法视频版本
-https://www.bilibili.com/video/BV13S4y1D7u7   
-
 
 安装依赖
 ```
@@ -13,57 +9,59 @@ pip install -r requirements.txt
 ```
 
 运行
-```
-python tts.py --input SSML.xml
-```
-> 使用python 运行tts.py，通过参数input传入`SSML.xml`文件的路径
-
-或者可以通过传入`output` 传入希望保存的文件名
-```
-python tts.py --input SSML.xml --output 保存文件名
-```
-
-`SSML.xml`文件的示例如下
-```
-<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
-    <voice name="zh-CN-XiaoxiaoNeural">
-        <prosody rate="0%" pitch="0%">
-        这个是 SSML 语音合成标记语言
-        </prosody>
-    </voice>
-    <voice name="zh-CN-XiaoxiaoNeural">
-        <prosody rate="0%" pitch="0%">
-        这个是晓晓的声音
-        </prosody>
-    </voice>
-    <voice name="zh-CN-YunyangNeural">
-        <prosody rate="0%" pitch="0%">
-        这个是云扬的声音。
-        </prosody>
-    </voice>
-</speak>
-```
-`voice name` 声音的名字  
-`rate` 速度  
-`pitch` 语调  
-
-
-## 进阶玩法(选择声音和说话风格)
-> 因为用的网页版背后的API 所有网页版可以选择的声音和风格，这个小工具同样可以实现    
-可以先看一下[声音和风格示例](./声音和风格示例)文件夹中的xml示例学习一下  
-SSML（语音合成标记语言） 的`speak`标签内嵌套一个或多个`voice`，voice name 声音的名字如`zh-CN-XiaoxiaoNeural`
-`voice` 中可以嵌套`mstts`，`mstts`标签内可以指定说法的风格如`chat`聊天风格
-，简单了解之后就可以通过调整 SSML，以控制文本不同部分的声音效果。
 
 ```
-<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
-    <voice name="zh-CN-XiaoxiaoNeural">
-        <mstts:express-as style="chat">
-            <prosody rate="0%" pitch="0%">晓晓聊天声音</prosody>
-        </mstts:express-as>
-    </voice>
-</speak>
+python tts.py --input ./examples/demo.txt
 ```
+
+> 使用`python` 运行`tts.py`，通过参数`input`传入文本文件的路径
+> 默认使用同目录下的 `config.yml`配置文件，可以通过`config`参数更改
+> 或者可以通过传入`output` 传入希望保存的文件名
+
+```
+python tts.py --input ./examples/demo.txt --config ./examples/config.yml --output demo.mp3
+```
+
+带有自定义标签的文本文件的示例如下
+```
+【男1】你好，这里是男1的语音。
+【女1】你好，这里是女1的语音。
+由于没有标签，这行使用默认语音朗读。
+这里还是默认语音。
+【不存在】没有找到配置，使用默认语音。
+【男1】<phoneme alphabet="sapi" ph="zhong 4 zhong 4">重重</phoneme>和重重，读的对吗？
+【女1:angry】能听出我很生气吗，这里还是女1。
+【男1:,Boy】这里还是男1，不过我现在的角色是男孩。
+【男1:,Girl】这里还是男1，我现在的角色是女孩<break strength="strong" />不过，我不会扮演这个角色啊，还是回到了我原来的声音。
+【女1:,Boy】这里还是女1，我现在的角色也是男孩。
+【女1】标签每行只有一个生效，【男1】这个是不起作用的。
+```
+`【男1】` 标签，在config.yml中配置的一个tag 
+
+`config.yml`示例如下
+
+```yml
+bitrate: 160k
+format: audio-24khz-160kbitrate-mono-mp3
+templates:
+  - tag: 女1
+    name: zh-CN-XiaomoNeural
+  - tag: g
+    name: zh-CN-XiaomoNeural
+    style: gentle
+    role: YoungAdultMale
+  - tag: 男1
+    name: zh-CN-YunxiNeural
+    role: Narrator
+    style: narration-relaxed
+default: g
+```
+
+## 进阶玩法(使用SSML)
+> 文本中可以包含SSML标签，所以可以直接使用SSML来改变发音、设置停顿或某些文本静音，这些的文档和示例可以在微软的文档中找到：
+> [通过SSML改进合成-停顿](https://learn.microsoft.com/zh-cn/azure/cognitive-services/speech-service/speech-synthesis-markup?tabs=csharp#add-or-remove-a-break-or-pause) 
+> [SSML中使用拼音改变字词的发音](https://learn.microsoft.com/zh-cn/azure/cognitive-services/speech-service/speech-ssml-phonetic-sets#zh-cn)
+
 ### 常用声音和风格列表
 
 注'General'不用添加到sytle中
@@ -86,7 +84,11 @@ SSML（语音合成标记语言） 的`speak`标签内嵌套一个或多个`voic
 
 以上是中文部分的，微软的tts支持100多种语音，其他的语音自己在网页上查看吧
 
+以下是微软的相关网站：
 
+[声音、风格和角色](https://learn.microsoft.com/zh-cn/azure/cognitive-services/speech-service/language-support?tabs=stt-tts#voice-styles-and-roles)
+
+[微软的网页示例，可以参考SSML](https://azure.microsoft.com/zh-cn/products/cognitive-services/text-to-speech/#features)
 
 ## 如果对js逆向感兴趣
 

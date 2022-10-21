@@ -1,0 +1,14 @@
+bitrate: 160k
+format: audio-24khz-160kbitrate-mono-mp3
+templates:
+  - tag: 女1
+    name: zh-CN-XiaomoNeural
+  - tag: g
+    name: zh-CN-XiaomoNeural
+    style: gentle
+    role: YoungAdultMale
+  - tag: 男1
+    name: zh-CN-YunxiNeural
+    role: Narrator
+    style: narration-relaxed
+default: g
