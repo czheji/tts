@@ -41,8 +41,9 @@ python pkg/tts.py --input ./examples/demo.txt --config ./examples/config.yml --o
 `config.yml`示例如下
 
 ```yml
-bitrate: 160k
-format: audio-24khz-160kbitrate-mono-mp3
+out_bitrate: 64k
+out_format: opus # mp3 aac opus
+format: audio-24khz-160kbitrate-mono-mp3 # riff-24khz-16bit-mono-pcm audio-24khz-160kbitrate-mono-mp3
 templates:
   - tag: 女1
     name: zh-CN-XiaomoNeural
@@ -55,6 +56,9 @@ templates:
     role: Narrator
     style: narration-relaxed
 default: g
+limit:
+  word_count: 300 #字数限制，若转换报错请减小这个值
+  ssml_count: 700 #SSML字数限制，若转换报错请减小这个值
 ```
 
 ## 进阶玩法(使用SSML)

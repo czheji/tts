@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from copy import copy
 from email.policy import default
+from signal import raise_signal
 from typing import Any
 import string
 import time
@@ -18,6 +19,9 @@ import yaml
 from mako.template import Template
 from pydub import AudioSegment
 import os
+import tempfile
+import shutil
+
 
 __SLEEP_S = 30 # 当失败时，等待多少秒重试
 
@@ -34,6 +38,7 @@ __ssml = [
     '<voice name="${name}"><mstts:express-as style="${style}" role="${role}"><prosody rate="${rate}%" pitch="${pitch}%">${text}</prosody></mstts:express-as></voice>'
 ]
 
+
 # 一条SSML语音配置
 @dataclass
 class SSML:
@@ -48,10 +53,12 @@ class SSML:
     def __eq__(self, __o: object) -> bool:
         return __o != None and self.tag == __o.tag and self.name == __o.name and self.rate == __o.rate and self.pitch == __o.pitch and self.style == __o.style and self.role == __o.role
 
+
 @dataclass
 class Limit:
-    word_count:int = 350
+    word_count:int = 300
     ssml_count:int = 800
+
 
 '''
 配置文件，yml格式，例如:
@@ -72,15 +79,19 @@ limit:
 '''
 @dataclass
 class Config:
-    templates: list[SSML]
+    templates: list[SSML] = None
     format:str = 'audio-24khz-160kbitrate-mono-mp3'
-    bitrate:str = '160k'
+    out_bitrate:str = '160k'
+    out_format:str = 'mp3'
     default:SSML = None
     tmpl = {}
     limit: Limit =None
+    tmpdir:str = None
     def __post_init__(self):
         data = []
         first = None
+        if self.templates == None:
+            self.templates = [{'tag':'g', 'name':'zh-CN-XiaoxiaoNeural'}]
         for t in self.templates:
             ssml = SSML(**t)
             if first == None:
@@ -99,6 +110,12 @@ class Config:
             self.limit = Limit(**self.limit)
         else:
             self.limit = Limit()
+        if self.tmpdir == None:
+            self.tmpdir = tempfile.mkdtemp(prefix='tts_')
+        else :
+            os.mkdir(self.tmpdir)
+        tempfile.tempdir = self.tmpdir
+
 
 
 @dataclass
@@ -107,8 +124,14 @@ class Segment:
     count:int = 0
     total:int = 0
     lines:list[str] = None
+    tmpdir:str = ''
     def __str__(self) -> str:
         return ''.join(self.lines)
+
+
+def getpath(seg:Segment):
+    return os.path.join(tempfile.tempdir, seg.filename)
+
 
 '''命令行参数解析'''
 def parseArgs():
@@ -122,10 +145,14 @@ def parseArgs():
 
 
 def load_config(path) -> Config:
-    '''加载配置文件'''
-    with open(path, 'r', encoding='utf-8') as file:
-        cfg = yaml.safe_load(file.read())
-        return Config(**cfg)
+    if os.path.exists(path):
+        '''加载配置文件'''
+        with open(path, 'r', encoding='utf-8') as file:
+            cfg = yaml.safe_load(file.read())
+            return Config(**cfg)
+    else:
+        return Config()
+
 
 def str_count(ss) -> int:
     '''找出字符串中的中英文、空格、数字、标点符号个数'''
@@ -166,6 +193,7 @@ def fr(input_string):
 def getXTime():
     now = datetime.now()
     return fr(str(now.year)) + '-' + fr(str(now.month)) + '-' + fr(str(now.day)) + 'T' + fr(hr_cr(int(now.hour))) + ':' + fr(str(now.minute)) + ':' + fr(str(now.second)) + '.' + str(now.microsecond)[:3] + 'Z'
+
 
 # Async function for actually communicating with the websocket
 async def transferMsTTSData(seg:Segment, cfg:Config):
@@ -225,16 +253,14 @@ async def transferMsTTSData(seg:Segment, cfg:Config):
             except Exception as e:
                 print(f'exception raised. send: {payload_3}')
                 raise e
-        with open(f'{seg.filename}', 'wb') as audio_out:
+        with open(getpath(seg), 'wb') as audio_out:
             audio_out.write(audio_stream)
-        print(f"end convert to speech, file: {seg.filename}, count:{seg.count}")
+        print(f"end convert to speech, file: {getpath(seg)}, count:{seg.count}")
+
 
 async def mainSeq(segs,cfg):
     await transferMsTTSData(segs,cfg)
 
-# def get_SSML(path):
-#     with open(path,'r',encoding='utf-8') as f:
-#         return f.read()
 
 def get_SSML(text:str, ssml:SSML) -> str:
     tmp = ''
@@ -246,8 +272,10 @@ def get_SSML(text:str, ssml:SSML) -> str:
         tmp = __ssml[0]
     return Template(tmp).render(text=text, **vars(ssml))
 
+
 def is_empty(s:str) ->bool:
     return s==None or len(s.strip())<1
+
 
 def parse_line(s:str, cfg:Config):
     ssml:SSML = None
@@ -282,13 +310,14 @@ def parse_line(s:str, cfg:Config):
                     ssml.role = role
     return ssml,content
 
+
 def gen_Segs(lines:list[str], cfg:Config) ->list[Segment]:
     ssml = None
     segs = []
     text = ''
     file_index = 0
     file_prefix = uuid.uuid4().hex.upper()
-    seg = Segment(filename=f'{file_prefix}-{file_index:0>2d}.mp3', count=0, lines=[])
+    seg = Segment(filename=f'{file_prefix}-{file_index:0>2d}', count=0, lines=[])
     for line in lines:
         ss, cc = parse_line(line, cfg)
 
@@ -305,7 +334,7 @@ def gen_Segs(lines:list[str], cfg:Config) ->list[Segment]:
                 text = ''
             segs.append(seg)
             file_index += 1
-            seg = Segment(filename=f'{file_prefix}-{file_index:0>2d}.mp3', count=0, lines=[])
+            seg = Segment(filename=f'{file_prefix}-{file_index:0>2d}', count=0, lines=[])
         else:
             seg.count += str_count(cc)
         if ss != ssml:
@@ -319,21 +348,31 @@ def gen_Segs(lines:list[str], cfg:Config) ->list[Segment]:
         segs.append(seg)
     return segs
 
+
 def read_lines(path):
     with open(path, 'r', encoding='utf-8') as f:
         return f.readlines()
 
+
 def merge_audio(segs:list[Segment], cfg:Config) -> AudioSegment:
     audio = AudioSegment.empty()
+    type = 'mp3' if cfg.format.endswith('mp3') else 'wav'
     for seg in segs:
-        mp3 = AudioSegment.from_mp3(seg.filename)
-        audio += mp3
+        av = AudioSegment.from_file(getpath(seg), type)
+        audio += av
     return audio
+
+
+def remove_tmpdir():
+    tmpdir = tempfile.tempdir
+    tempfile.tempdir = None
+    shutil.rmtree(tmpdir)
+
 
 def run(lines, cfg, output_path):
     segs = gen_Segs(lines, cfg)
     print(f'2. make ssml done, segs={len(segs)}')
-
+    
     for seg in segs:
         s = f'{seg}'
         if not is_empty(s):
@@ -348,26 +387,39 @@ def run(lines, cfg, output_path):
     print(f'3. request tts done, segs={len(segs)}')
 
     audio:AudioSegment = merge_audio(segs, cfg)
-    audio.export(output_path, format='mp3', bitrate=cfg.bitrate)
+    audio.export(output_path, format=cfg.out_format, bitrate=cfg.out_bitrate)
     print(f'4. merge segs done, output: {output_path}')
 
-    for seg in segs:
-        os.remove(seg.filename)
-    print(f'5. remove temp files done, completed')
 
 def cmd():
     args = parseArgs()
-    output_path = args.output if args.output else 'output_'+ str(int(time.time()*1000))+".mp3"
     config_path = args.config if args.config else 'config.yml'
-    input_path = args.input if args.input else 'mnyz1_02.txt'
     # 1 读取配置文件
     cfg = load_config(config_path)
+    suffix = None
+    if cfg.out_format == 'mp3':
+        suffix = '.mp3'
+    elif cfg.out_format == 'opus':
+        suffix = '.opus'
+    elif cfg.out_format == 'aac':
+        suffix = '.aac'
+        cfg.out_format = 'adts'
+    elif cfg.out_format == 'adts':
+        suffix = '.aac'
+    else:
+        raise Exception('out_format invalid. supports: mp3 , opus, aac')
+    input_path = args.input if args.input else 'input.txt'
+    output_path = args.output if args.output else f'{input_path[:-4]}{suffix}'
     #print(cfg)
     # 2 读取文本文件
     lines = read_lines(input_path)
     print(f'1. read txt done, lines={len(lines)}')
     # 3 进行转换
-    run(lines, cfg, output_path)
+    try:
+        run(lines, cfg, output_path)
+    finally:
+        remove_tmpdir()
+
 
 if __name__ == "__main__":
     cmd()

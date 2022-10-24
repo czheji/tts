@@ -1,5 +1,6 @@
-bitrate: 160k
-format: audio-24khz-160kbitrate-mono-mp3
+out_bitrate: 64k
+out_format: mp3 # mp3 aac opus
+format: audio-24khz-160kbitrate-mono-mp3 # riff-24khz-16bit-mono-pcm audio-24khz-160kbitrate-mono-mp3
 templates:
   - tag: 女1
     name: zh-CN-XiaomoNeural
@@ -13,5 +14,5 @@ templates:
     style: narration-relaxed
 default: g
 limit:
-  word_count: 200
-  ssml_count: 600
+  word_count: 300
+  ssml_count: 700
