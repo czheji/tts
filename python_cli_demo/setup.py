@@ -16,5 +16,10 @@ setup(
     ],
     entry_points = {
         "console_scripts": ['mstts = pkg.tts:cmd'] 
-    }
+    },
+    # command_options = {
+    #    'nuitka': {
+    #        '--include-package': ['websockets', 'mako']
+    #    }
+    # }
 )
