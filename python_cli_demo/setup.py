@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "ttsDemo",
-    version = "0.1",
+    version = "0.2",
     description = "Azuru tts Command line Demo",
     author = "czj",
     packages = ['pkg'],

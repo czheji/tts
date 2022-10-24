@@ -12,3 +12,6 @@ templates:
     role: Narrator
     style: narration-relaxed
 default: g
+limit:
+  word_count: 200
+  ssml_count: 600

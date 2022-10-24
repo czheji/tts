@@ -19,9 +19,6 @@ from mako.template import Template
 from pydub import AudioSegment
 import os
 
-# 一些限制，避免微软接口返回错误或者音频不完整
-__MAX_COUNT = 350 # 每次发送请求最大的字数
-__MAX_SSML_TOTAL = 800 # 每次发送请求最大的SSML格式化后字数
 __SLEEP_S = 30 # 当失败时，等待多少秒重试
 
 # 行首格式的前导符和结束符
@@ -51,6 +48,11 @@ class SSML:
     def __eq__(self, __o: object) -> bool:
         return __o != None and self.tag == __o.tag and self.name == __o.name and self.rate == __o.rate and self.pitch == __o.pitch and self.style == __o.style and self.role == __o.role
 
+@dataclass
+class Limit:
+    word_count:int = 350
+    ssml_count:int = 800
+
 '''
 配置文件，yml格式，例如:
 
@@ -64,6 +66,9 @@ templates: # 语音模板
 default: g # 默认语音配置，如果行首没有标签则使用默认语音配置
 bitrate: 160k # 输出mp3的比特率
 format: audio-24khz-160kbitrate-mono-mp3 # 语音格式
+limit:
+    word_count: 300 # 每次最多的字数，太多免费接口会报错
+    ssml_count: 700 # 带上SSML标记后的最大字符数量，任意一个限制到达后会进行分段
 '''
 @dataclass
 class Config:
@@ -72,6 +77,7 @@ class Config:
     bitrate:str = '160k'
     default:SSML = None
     tmpl = {}
+    limit: Limit =Limit()
     def __post_init__(self):
         data = []
         first = None
@@ -288,7 +294,7 @@ def gen_Segs(lines:list[str], cfg:Config) ->list[Segment]:
             ssml = ss
         ssml_text = get_SSML(text, ssml)
         ssml_total = str_count(f'{seg}')+str_count(ssml_text)
-        if seg.count+str_count(cc)>__MAX_COUNT or ssml_total+str_count(cc)>__MAX_SSML_TOTAL:
+        if seg.count+str_count(cc)>cfg.limit.word_count or ssml_total+str_count(cc)>cfg.limit.ssml_count:
             # print(f'[{file_index} count:{seg.count}, total:{ssml_total}')
             if not is_empty(text):
                 seg.lines.append(ssml_text)
@@ -352,6 +358,7 @@ def cmd():
     input_path = args.input if args.input else 'mnyz1_02.txt'
     # 1 读取配置文件
     cfg = load_config(config_path)
+    #print(cfg)
     # 2 读取文本文件
     lines = read_lines(input_path)
     print(f'1. read txt done, lines={len(lines)}')
