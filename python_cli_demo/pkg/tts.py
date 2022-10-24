@@ -77,7 +77,7 @@ class Config:
     bitrate:str = '160k'
     default:SSML = None
     tmpl = {}
-    limit: Limit =Limit()
+    limit: Limit =None
     def __post_init__(self):
         data = []
         first = None
@@ -95,6 +95,10 @@ class Config:
                 self.default = first
         else :
             self.default = first
+        if self.limit != None:
+            self.limit = Limit(**self.limit)
+        else:
+            self.limit = Limit()
 
 
 @dataclass
