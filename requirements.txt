@@ -4,6 +4,8 @@
 #
 #    pip-compile
 #
+azure-cognitiveservices-speech==1.24.0
+    # via ttsDemo (setup.py)
 certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1

@@ -12,7 +12,8 @@ setup(
         'websockets',
         'pyyaml',
         'mako',
-        'pydub'
+        'pydub',
+        'azure-cognitiveservices-speech'
     ],
     entry_points = {
         "console_scripts": ['mstts = pkg.tts:cmd'] 

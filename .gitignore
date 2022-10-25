@@ -1,0 +1,6 @@
+ttsDemo.egg-info/
+dist/
+tts.*/
+build/
+examples/config2.yml
+tts.exe
